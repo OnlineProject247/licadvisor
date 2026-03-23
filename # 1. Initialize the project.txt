@@ -1,0 +1,21 @@
+# 1. Initialize the project
+git init
+
+# 2. Add all files
+git add .
+
+# 3. Commit the changes
+git commit -m "Initial commit: LIC Advisor project ready for deployment"
+
+# 4. Connect to your GitHub repository (Replace 'your-username' with yours)
+git remote add origin https://github.com/OnlineProject247/licadvisor
+
+# 5. Rename branch and push
+git branch -M main
+git push -u origin main
+
+
+
+git remote add origin https://github.com/OnlineProject247/licadvisor.git
+git branch -M main
+git push -u origin main
