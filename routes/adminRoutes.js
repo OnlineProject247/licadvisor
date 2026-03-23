@@ -4,7 +4,7 @@ const Admin = require('../models/Admin');
 const User = require('../models/User');
 const QuoteRequest = require('../models/QuoteRequest');
 const Contact = require('../models/Contact');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 // Keep only essential routes
 router.get('/forgot-password', (req, res) => {
