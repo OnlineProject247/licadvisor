@@ -21,9 +21,24 @@ app.use(session({
 }));
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('MongoDB connection error:', err));
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+            serverSelectionTimeoutMS: 5000
+        });
+        console.log('Connected to MongoDB Atlas');
+    } catch (err) {
+        console.error('MongoDB Atlas connection failed:', err.message);
+        console.log('Falling back to local MongoDB...');
+        try {
+            await mongoose.connect('mongodb://localhost:27017/lic_advisor');
+            console.log('Connected to local MongoDB');
+        } catch (localErr) {
+            console.error('Local MongoDB connection error:', localErr);
+        }
+    }
+};
+connectDB();
 
 // Routes
 app.use('/', require('./routes/index'));

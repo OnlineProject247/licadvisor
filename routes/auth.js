@@ -120,7 +120,9 @@ router.post('/forgot-password', async (req, res) => {
             }
         });
 
-        const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
+        const protocol = req.protocol;
+        const host = req.get('host');
+        const resetUrl = `${protocol}://${host}/reset-password/${resetToken}`;
         const info = await transporter.sendMail({
             from: '"LIC Advisor" <support@licadvisor.com>',
             to: user.email,

@@ -26,19 +26,11 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/main');
 
-// Add session before routes
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'licadvisor2024secret',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }
-}));
-app.use(flash());
-// Make sure these lines appear BEFORE any catch-all routes
+// Body parser
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Keep only one session middleware
+// Session configuration
 app.use(session({
     secret: process.env.SESSION_SECRET || 'licadvisor2024secret',
     resave: false,
@@ -49,6 +41,9 @@ app.use(session({
     }
 }));
 app.use(flash());
+
+// Static files
+app.use(express.static('public'));
 
 // Remove all other instances of these routes and keep only these
 app.use('/admin', adminAuthRoutes);  // Auth routes first
@@ -107,15 +102,38 @@ app.get('/thank-you', (req, res) => {
 app.get('/calculator/results', (req, res) => {
     res.render('calculator/premium-results');
 });
-// MongoDB Connection
-// Add this before your routes
-// Update MongoDB Connection (find the mongoose.connect section)
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lic_advisor', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log('Connected to MongoDB Atlas'))
-.catch(err => console.error('MongoDB connection error:', err));
+// MongoDB Connection with Fallback
+const connectDB = async () => {
+    try {
+        const mongoOptions = {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000 // Timeout after 5s instead of 30s
+        };
+
+        if (process.env.MONGODB_URI) {
+            console.log('Attempting to connect to MongoDB Atlas...');
+            await mongoose.connect(process.env.MONGODB_URI, mongoOptions);
+            console.log('Connected to MongoDB Atlas');
+        } else {
+            throw new Error('No MONGODB_URI provided');
+        }
+    } catch (err) {
+        console.error('MongoDB Atlas connection failed:', err.message);
+        console.log('Falling back to local MongoDB...');
+        try {
+            await mongoose.connect('mongodb://localhost:27017/lic_advisor', {
+                useNewUrlParser: true,
+                useUnifiedTopology: true
+            });
+            console.log('Connected to local MongoDB');
+        } catch (localErr) {
+            console.error('Local MongoDB connection error:', localErr.message);
+        }
+    }
+};
+
+connectDB();
 // Add after your existing routes
 // Replace this route
 app.get('/admin/admin-login', (req, res) => {
@@ -236,30 +254,6 @@ app.get('/policies/insurance/endowment/715', (req, res) => {
 });
 app.use('/appointment', appointmentRouter);
 app.use('/newsletter', newsletterRoutes);
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-// Add session middleware before your routes
-app.use(session({
-    secret: 'lic-advisor-secret-key',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } // set to true if using HTTPS
-}));
-
-// Add these before your route configurations
-// REMOVE these duplicate session middleware declarations (lines 29-34, 177-182, and 186-192)
-// Keep only this one at the top of your routes
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'licadvisor2024secret',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production', // Only use secure cookies in production
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-}));
-app.use(flash());
 // Add these routes with your other routes
 app.get('/privacy-policy', (req, res) => {
     res.render('policies/legal/privacy-policy', { 
@@ -373,3 +367,6 @@ app.get('/policies/insurance/endowment/760', (req, res) => {
 app.use((req, res) => {
     res.status(404).render('404');
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
